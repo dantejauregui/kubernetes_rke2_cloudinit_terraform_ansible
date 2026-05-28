@@ -6,6 +6,8 @@ terraform.tfvars
 *.tfvars.json
 crash.log
 .terraform.lock.hcl
+terraform.tfstate.telmate.backup
+terraform.tfstate.backup.telmate
 
 # Python
 __pycache__/

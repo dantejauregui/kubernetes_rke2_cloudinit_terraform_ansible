@@ -1,121 +1,133 @@
 terraform {
   required_providers {
     proxmox = {
-      source  = "Telmate/proxmox"
-      version = "3.0.2-rc07"
+      source  = "bpg/proxmox"
+      version = "~> 0.78"
     }
   }
 }
 
 provider "proxmox" {
-  pm_api_url          = var.proxmox_api_url
-  pm_api_token_id     = var.proxmox_api_token_id
-  pm_api_token_secret = var.proxmox_api_token_secret
 
-  pm_tls_insecure = true
+  endpoint = var.proxmox_api_url
+
+  api_token = "${var.proxmox_api_token_id}=${var.proxmox_api_token_secret}"
+
+  insecure = true
 }
 
-resource "proxmox_vm_qemu" "ubuntu_vm" {
+locals {
 
-  for_each = {
+  vms = {
 
     cp1 = {
       vmid     = 101
       hostname = "cp1"
 
-      memory  = 2048
-      cores   = 2
-      sockets = 1
-      vcpus   = 2
-
-      disk = "20G"
+      memory = 2048
+      cores  = 2
+      disk   = 20
     }
 
     cp2 = {
       vmid     = 102
       hostname = "cp2"
 
-      memory  = 2048
-      cores   = 2
-      sockets = 1
-      vcpus   = 2
-
-      disk = "20G"
+      memory = 2048
+      cores  = 2
+      disk   = 20
     }
 
     worker1 = {
       vmid     = 103
       hostname = "worker1"
 
-      memory  = 6144
-      cores   = 4
-      sockets = 1
-      vcpus   = 4
+      memory = 4096
+      cores  = 4
+      disk   = 40
+    }
+  }
+}
 
-      disk = "40G"
+resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
+
+  for_each = local.vms
+
+  node_name = "proxmox"
+
+  vm_id = each.value.vmid
+
+  name = each.value.hostname
+
+  started = true
+
+  on_boot = true
+
+  clone {
+    vm_id = 9000
+    full  = false
+  }
+
+  agent {
+    enabled = true
+  }
+
+  cpu {
+
+    cores = each.value.cores
+
+    type = "host"
+  }
+
+  memory {
+
+    dedicated = each.value.memory
+  }
+
+  disk {
+
+    datastore_id = "local-lvm"
+
+    interface = "scsi0"
+
+    size = each.value.disk
+  }
+
+  initialization {
+
+    datastore_id = "local-lvm"
+
+    interface = "ide2"
+
+    ip_config {
+
+      ipv4 {
+
+        address = "dhcp"
+      }
+    }
+
+    user_account {
+
+      username = "ubuntu"
+
+      keys = [
+        file("~/.ssh/id_ed25519.pub")
+      ]
     }
   }
 
-  vmid        = each.value.vmid
-  name        = each.value.hostname
-  target_node = "proxmox"
+  network_device {
 
-  clone = "ubuntu-2404-template"
-
-  full_clone = false
-
-  onboot = true
-
-  agent = 1
-
-  os_type = "cloud-init"
-
-  scsihw = "virtio-scsi-single"
-
-  boot = "order=scsi0"
-
-  memory  = each.value.memory
-  cores   = each.value.cores
-  sockets = each.value.sockets
-  vcpus   = each.value.vcpus
-
-  serial {
-    id   = 0
-    type = "socket"
-  }
-
-  vga {
-    type = "serial0"
-  }
-
-  network {
-    id     = 0
-    model  = "virtio"
     bridge = "vmbr0"
+
+    model = "virtio"
   }
 
-  disks {
-    scsi {
-      scsi0 {
-        disk {
-          size    = each.value.disk
-          storage = "local-lvm"
-        }
-      }
-    }
+  serial_device {}
 
-    ide {
-      ide2 {
-        cloudinit {
-          storage = "local-lvm"
-        }
-      }
-    }
+  operating_system {
+
+    type = "l26"
   }
-
-  ipconfig0 = "ip=dhcp"
-
-  ciuser = "ubuntu"
-
-  sshkeys = file("~/.ssh/id_ed25519.pub")
 }
