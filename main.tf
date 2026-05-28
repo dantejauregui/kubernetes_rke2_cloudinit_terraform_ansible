@@ -18,19 +18,46 @@ provider "proxmox" {
 resource "proxmox_vm_qemu" "ubuntu_vm" {
 
   for_each = {
+
     cp1 = {
-      vmid   = 101
-      memory = 2048
+      vmid     = 101
+      hostname = "cp1"
+
+      memory  = 2048
+      cores   = 2
+      sockets = 1
+      vcpus   = 2
+
+      disk = "20G"
     }
 
     cp2 = {
-      vmid   = 102
-      memory = 2048
+      vmid     = 102
+      hostname = "cp2"
+
+      memory  = 2048
+      cores   = 2
+      sockets = 1
+      vcpus   = 2
+
+      disk = "20G"
+    }
+
+    worker1 = {
+      vmid     = 103
+      hostname = "worker1"
+
+      memory  = 6144
+      cores   = 4
+      sockets = 1
+      vcpus   = 4
+
+      disk = "40G"
     }
   }
 
   vmid        = each.value.vmid
-  name        = each.key
+  name        = each.value.hostname
   target_node = "proxmox"
 
   clone = "ubuntu-2404-template"
@@ -47,11 +74,10 @@ resource "proxmox_vm_qemu" "ubuntu_vm" {
 
   boot = "order=scsi0"
 
-  cores   = 2
-  sockets = 1
-  vcpus   = 2
-
-  memory = each.value.memory
+  memory  = each.value.memory
+  cores   = each.value.cores
+  sockets = each.value.sockets
+  vcpus   = each.value.vcpus
 
   serial {
     id   = 0
@@ -72,7 +98,7 @@ resource "proxmox_vm_qemu" "ubuntu_vm" {
     scsi {
       scsi0 {
         disk {
-          size    = "20G"
+          size    = each.value.disk
           storage = "local-lvm"
         }
       }
