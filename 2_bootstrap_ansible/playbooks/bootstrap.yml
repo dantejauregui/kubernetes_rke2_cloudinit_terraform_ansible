@@ -1,0 +1,25 @@
+- hosts: all
+
+  become: true
+
+  roles:
+
+    - common
+
+
+- hosts: control_plane
+
+  become: true
+
+  roles:
+
+    - rke2_server
+
+
+- hosts: workers
+
+  become: true
+
+  roles:
+
+    - rke2_agent

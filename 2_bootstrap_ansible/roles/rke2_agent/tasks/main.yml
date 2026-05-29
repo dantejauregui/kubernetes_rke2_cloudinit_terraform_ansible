@@ -1,0 +1,24 @@
+- name: install rke2 server
+  shell: |
+    curl -sfL https://get.rke2.io | sh -
+
+  args:
+    creates: /usr/local/bin/rke2
+
+- name: create config dir
+  file:
+    path: /etc/rancher/rke2
+    state: directory
+
+- name: write config
+  copy:
+    dest: /etc/rancher/rke2/config.yaml
+    content: |
+      server: https://{{ hostvars[groups['control_plane'][0]].ansible_host }}:9345
+      token: "{{ cluster_token }}"
+
+- name: enable agent
+  systemd:
+    name: rke2-agent
+    enabled: true
+    state: started

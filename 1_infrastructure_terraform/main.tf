@@ -24,18 +24,9 @@ locals {
       vmid     = 101
       hostname = "cp1"
 
-      memory = 2048
+      memory = 4096
       cores  = 2
-      disk   = 20
-    }
-
-    cp2 = {
-      vmid     = 102
-      hostname = "cp2"
-
-      memory = 2048
-      cores  = 2
-      disk   = 20
+      disk   = 40
     }
 
     worker1 = {
@@ -45,6 +36,15 @@ locals {
       memory = 4096
       cores  = 4
       disk   = 40
+    }
+
+    worker2 = {
+      vmid     = 102
+      hostname = "worker2"
+
+      memory = 4096
+      cores  = 2
+      disk   = 30
     }
   }
 }
@@ -64,7 +64,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   on_boot = true
 
   clone {
-    vm_id = 9000
+    vm_id = 998
     full  = false
   }
 

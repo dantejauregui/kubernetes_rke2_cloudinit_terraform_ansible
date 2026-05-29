@@ -1,0 +1,15 @@
+rke2_version: ""
+
+cluster_token: homelab-rke2-secret
+
+ansible_python_interpreter: /usr/bin/python3
+
+required_packages:
+  - curl
+  - jq
+  - nano
+  - htop
+  - iputils-ping
+  - netcat-openbsd
+  - bash-completion
+  - iptables

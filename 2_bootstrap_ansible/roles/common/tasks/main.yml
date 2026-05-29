@@ -1,0 +1,103 @@
+- name: wait for cloud-init to finish
+  command: cloud-init status --wait
+  register: cloudinit_status
+  changed_when: false
+  failed_when: cloudinit_status.rc not in [0,2]
+
+- name: disable unattended upgrades service
+  systemd:
+    name: unattended-upgrades
+    enabled: false
+    state: stopped
+  ignore_errors: true
+
+- name: disable apt periodic services
+  systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop:
+    - apt-daily.timer
+    - apt-daily-upgrade.timer
+  ignore_errors: true
+
+- name: wait until package manager is free
+  shell: |
+    while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
+          fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
+          fuser /var/cache/apt/archives/lock >/dev/null 2>&1 || \
+          pgrep -x unattended-upgr >/dev/null
+    do
+      echo "waiting package manager"
+      sleep 5
+    done
+  changed_when: false
+
+- name: update apt cache
+  apt:
+    update_cache: true
+
+- name: install packages
+  apt:
+    name: "{{ required_packages }}"
+    state: present
+
+- name: disable swap runtime
+  command: swapoff -a
+  changed_when: false
+
+- name: remove swap fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
+- name: persist overlay module
+  copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+
+- name: load overlay module
+  community.general.modprobe:
+    name: overlay
+    state: present
+
+- name: load br_netfilter module
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+
+- name: write kubernetes sysctl config
+  copy:
+    dest: /etc/sysctl.d/k8s.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables=1
+      net.bridge.bridge-nf-call-ip6tables=1
+      net.ipv4.ip_forward=1
+
+- name: apply sysctl
+  command: sysctl --system
+  changed_when: false
+
+- name: add rke2 binaries to PATH
+  copy:
+    dest: /etc/profile.d/rke2-path.sh
+    mode: "0644"
+    content: |
+      export PATH=/var/lib/rancher/rke2/bin:$PATH
+
+- name: configure kubeconfig env variable
+  copy:
+    dest: /etc/profile.d/rke2-kubeconfig.sh
+    mode: "0644"
+    content: |
+      export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+
+- name: add kubectl alias
+  copy:
+    dest: /etc/profile.d/kubectl-alias.sh
+    mode: "0644"
+    content: |
+      alias k=kubectl

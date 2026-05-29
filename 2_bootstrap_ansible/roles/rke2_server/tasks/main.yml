@@ -1,0 +1,35 @@
+- name: install rke2 server
+  shell: |
+    curl -sfL https://get.rke2.io | sh -
+
+  args:
+    creates: /usr/local/bin/rke2
+
+- name: create config dir
+  file:
+    path: /etc/rancher/rke2
+    state: directory
+
+- name: write config
+  copy:
+    dest: /etc/rancher/rke2/config.yaml
+    content: |
+      write-kubeconfig-mode: "0644"
+      token: "{{ cluster_token }}"
+      tls-san:
+      - "{{ hostvars[groups['control_plane'][0]].ansible_host }}"
+
+- name: enable rke2 server
+  systemd:
+    name: rke2-server
+    enabled: true
+    state: started
+
+- name: wait api
+  wait_for:
+
+    host: "{{ hostvars[groups['control_plane'][0]].ansible_host }}"
+
+    port: 6443
+
+    timeout: 300

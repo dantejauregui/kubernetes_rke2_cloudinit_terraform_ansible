@@ -1,0 +1,7 @@
+- hosts: workers
+
+  become: true
+
+  roles:
+
+    - rke2_agent

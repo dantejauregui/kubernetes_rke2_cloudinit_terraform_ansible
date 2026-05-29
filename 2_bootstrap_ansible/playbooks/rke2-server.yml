@@ -1,0 +1,7 @@
+- hosts: control_plane
+
+  become: true
+
+  roles:
+
+    - rke2_server
