@@ -390,3 +390,14 @@ Planned:
 - Keycloak
 - Ingress controller
 - GitOps workflows
+
+
+# Ansible steps:
+
+ansible-playbook playbooks/common.yml
+
+ansible-playbook playbooks/rke2-server.yml
+
+ansible-playbook playbooks/rke2-agent.yml
+
+ansible-playbook playbooks/fetch-kubeconfig.yml

@@ -14,10 +14,13 @@
   copy:
     dest: /etc/rancher/rke2/config.yaml
     content: |
-      write-kubeconfig-mode: "0644"
       token: "{{ cluster_token }}"
       tls-san:
-      - "{{ hostvars[groups['control_plane'][0]].ansible_host }}"
+        - "{{ hostvars[groups['control_plane'][0]].ansible_host }}"
+      write-kubeconfig-mode: "0644"
+
+      disable:
+        - rke2-ingress-nginx
 
 - name: enable rke2 server
   systemd:
