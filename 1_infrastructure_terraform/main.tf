@@ -1,7 +1,11 @@
 terraform {
+
   required_providers {
+
     proxmox = {
-      source  = "bpg/proxmox"
+
+      source = "bpg/proxmox"
+
       version = "~> 0.78"
     }
   }
@@ -18,33 +22,55 @@ provider "proxmox" {
 
 locals {
 
+  gateway = "192.168.0.1"
+
+  cidr = "/24"
+
   vms = {
 
     cp1 = {
-      vmid     = 101
+
+      vmid = 101
+
       hostname = "cp1"
 
-      memory = 4096
-      cores  = 2
-      disk   = 40
-    }
-
-    worker1 = {
-      vmid     = 103
-      hostname = "worker1"
+      ip = "192.168.0.19"
 
       memory = 4096
-      cores  = 4
-      disk   = 40
+
+      cores = 2
+
+      disk = 40
     }
 
     worker2 = {
-      vmid     = 102
+
+      vmid = 102
+
       hostname = "worker2"
 
+      ip = "192.168.0.20"
+
       memory = 4096
-      cores  = 2
-      disk   = 30
+
+      cores = 2
+
+      disk = 30
+    }
+
+    worker1 = {
+
+      vmid = 103
+
+      hostname = "worker1"
+
+      ip = "192.168.0.21"
+
+      memory = 4096
+
+      cores = 4
+
+      disk = 40
     }
   }
 }
@@ -63,12 +89,17 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   on_boot = true
 
+  stop_on_destroy = false
+
   clone {
+
     vm_id = 998
-    full  = false
+
+    full = false
   }
 
   agent {
+
     enabled = true
   }
 
@@ -99,11 +130,15 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
     interface = "ide2"
 
+    upgrade = false
+
     ip_config {
 
       ipv4 {
 
-        address = "dhcp"
+        address = "${each.value.ip}${local.cidr}"
+
+        gateway = local.gateway
       }
     }
 
@@ -112,7 +147,8 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
       username = "ubuntu"
 
       keys = [
-        file("~/.ssh/id_ed25519.pub")
+
+        trimspace(file("~/.ssh/id_ed25519.pub"))
       ]
     }
   }
@@ -129,5 +165,10 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   operating_system {
 
     type = "l26"
+  }
+
+  vga {
+
+    type = "serial0"
   }
 }

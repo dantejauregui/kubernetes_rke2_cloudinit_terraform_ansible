@@ -22,8 +22,8 @@ output "vm_ipv4" {
 
   value = {
 
-    for k, vm in proxmox_virtual_environment_vm.ubuntu_vm :
+    for name, vm in proxmox_virtual_environment_vm.ubuntu_vm :
 
-    k => try(vm.ipv4_addresses[1][0], "unknown")
+    name => vm.ipv4_addresses[1][0]
   }
 }

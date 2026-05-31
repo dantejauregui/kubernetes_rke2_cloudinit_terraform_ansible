@@ -1,15 +1,37 @@
 # Proxmox + Terraform + Cloud-Init Lab
 
-Infrastructure lab for:
-- Proxmox VE
-- Terraform
-- Cloud-init
-- K3s Kubernetes cluster provisioning
+Phase 1 — Terraform Infrastructure
+----------------------------------
+Proxmox VMs
+Cloud-init
+Networking
+Disks
+IPs
 
-Hardware target:
-- MacBook Pro Mid-2012
-- 16GB RAM
-- 500GB HDD
+Phase 2 — Ansible Bootstrap
+---------------------------
+OS prep
+RKE2 install
+Join nodes
+Fetch kubeconfig
+Cluster baseline only
+
+Phase 3 — Platform Terraform
+----------------------------
+MetalLB
+Gateway API CRDs
+Envoy Gateway
+cert-manager
+ArgoCD
+Observability
+Apps
+
+Phase 4 — GitOps / Applications
+-------------------------------
+Namespaces
+Applications
+Helm releases
+Manifests
 
 ---
 
@@ -392,12 +414,24 @@ Planned:
 - GitOps workflows
 
 
-# Ansible steps:
+# Terraform steps to create Proxmox VMs:
+terraform init
+terraform plan
+terraform apply
 
+
+# Ansible steps for configuration of VMs:
 ansible-playbook playbooks/common.yml
 
 ansible-playbook playbooks/rke2-server.yml
 
-ansible-playbook playbooks/rke2-agent.yml
+ansible-playbook playbooks/rke2-workers.yml
 
 ansible-playbook playbooks/fetch-kubeconfig.yml
+
+
+After fetching the kubeconfig inside the Ansible's Artifact folder, export it and now you can use "k9s":
+
+export KUBECONFIG=artifacts/rke2.yaml
+kubectl get nodes
+k9s
